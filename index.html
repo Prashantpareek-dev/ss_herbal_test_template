@@ -266,9 +266,16 @@ function Qty({value,onChange,min=1,max=10}) {
 }
 
 /* Product Card */
-function PCard({id,name,tagline,price,mrp,rating,reviews,badge,badgeTone,images,onClick,onAdd}) {
+function PCard({id,name,tagline,price,mrp,rating,reviews,badge,badgeTone,images,onClick,onAdd,onBuyNow}) {
   const [hov,setHov]=React.useState(false);
+  const [added,setAdded]=React.useState(false);
   const cover=images&&images.length?images[0]:null;
+  const handleAdd=(e)=>{
+    e.stopPropagation();
+    onAdd&&onAdd();
+    setAdded(true);
+    setTimeout(()=>setAdded(false),1400);
+  };
   return (
     <div onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{background:'#fff',border:'1px solid var(--green-100)',borderRadius:16,overflow:'hidden',cursor:'pointer',transition:'all .22s',transform:hov?'translateY(-4px)':'none',boxShadow:hov?'var(--shadow-hover)':'var(--shadow-card)',display:'flex',flexDirection:'column'}}>
@@ -285,9 +292,17 @@ function PCard({id,name,tagline,price,mrp,rating,reviews,badge,badgeTone,images,
           <Stars value={rating} size={12}/><span style={{fontSize:11,color:'var(--ink-400)',fontFamily:'var(--font-body)'}}>({reviews.toLocaleString('en-IN')})</span>
         </div>
         <PriceTag price={price} mrp={mrp} size="sm"/>
-        <button onClick={e=>{e.stopPropagation();onAdd&&onAdd();}} style={{marginTop:'auto',padding:'9px 0',background:hov?'var(--green-700)':'var(--green-50)',color:hov?'#fff':'var(--green-700)',border:`1.5px solid ${hov?'var(--green-700)':'var(--green-100)'}`,borderRadius:8,fontFamily:'var(--font-body)',fontSize:13,fontWeight:700,cursor:'pointer',transition:'all .17s'}}>
-          {hov?'Add to Cart ✓':'Add to Cart'}
-        </button>
+        <div style={{marginTop:'auto',display:'flex',gap:8}}>
+          <button onClick={handleAdd} title={added?'Added to cart':'Add to Cart'} aria-label="Add to Cart"
+            style={{width:40,height:38,flexShrink:0,display:'grid',placeItems:'center',background:added?'var(--green-700)':'var(--green-50)',color:added?'#fff':'var(--green-700)',border:`1.5px solid ${added?'var(--green-700)':'var(--green-100)'}`,borderRadius:8,cursor:'pointer',transition:'all .17s'}}>
+            {added
+              ? <Ic d="M20 6L9 17l-5-5" size={17} sw={2.4}/>
+              : <Ic d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" size={17}/>}
+          </button>
+          <button onClick={e=>{e.stopPropagation();onBuyNow&&onBuyNow();}} style={{flex:1,padding:'9px 0',background:'var(--green-700)',color:'#fff',border:'1.5px solid var(--green-700)',borderRadius:8,fontFamily:'var(--font-body)',fontSize:13,fontWeight:700,cursor:'pointer',transition:'all .17s'}}>
+            Buy Now
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -473,7 +488,7 @@ function TestimonialsSwiper() {
   );
 }
 
-function HomePage({onNav}) {
+function HomePage({onNav,onAddToCart}) {
   const newProds = PRODUCTS.filter(p=>p.isNew);
   const best = PRODUCTS.filter(p=>!p.isNew).slice(0,4);
   return (
@@ -488,7 +503,7 @@ function HomePage({onNav}) {
             <Btn variant="ghost" onClick={()=>onNav('new-launches')}>View All New →</Btn>
           </div>
           <div className="rg-4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:18}}>
-            {newProds.map(p=><PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>onNav('cart')}/>)}
+            {newProds.map(p=><PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>onAddToCart(p)} onBuyNow={()=>{onAddToCart(p);onNav('checkout');}}/>)}
           </div>
         </div>
       </section>
@@ -500,7 +515,7 @@ function HomePage({onNav}) {
             <Btn variant="ghost" onClick={()=>onNav('listing')}>View All →</Btn>
           </div>
           <div className="rg-4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:18}}>
-            {best.map(p=><PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>onNav('cart')}/>)}
+            {best.map(p=><PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>onAddToCart(p)} onBuyNow={()=>{onAddToCart(p);onNav('checkout');}}/>)}
           </div>
         </div>
       </section>
@@ -595,7 +610,7 @@ function ListingPage({onNav,onAddToCart}) {
             </select>
           </div>
           <div className="rg-3" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
-            {products.map(p=><PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>{onAddToCart(p);}}/>)}
+            {products.map(p=><PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>onAddToCart(p)} onBuyNow={()=>{onAddToCart(p);onNav('checkout');}}/>)}
           </div>
         </div>
       </div>
@@ -636,7 +651,7 @@ function NewLaunchesPage({onNav,onAddToCart}) {
         </div>
         <h2 style={{marginBottom:24}}>All New Arrivals</h2>
         <div className="rg-4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:18}}>
-          {newP.map(p=><PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>{onAddToCart(p);onNav('cart');}}/>)}
+          {newP.map(p=><PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>onAddToCart(p)} onBuyNow={()=>{onAddToCart(p);onNav('checkout');}}/>)}
         </div>
       </div>
     </div>
@@ -793,7 +808,7 @@ function PDPPage({product,onNav,onAddToCart}) {
       <div style={{marginTop:52}}>
         <h2 style={{marginBottom:22}}>You May Also Like</h2>
         <div className="rg-4" style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16}}>
-          {PRODUCTS.filter(pr=>pr.id!==p.id).slice(0,4).map(pr=><PCard key={pr.id} {...pr} onClick={()=>onNav('pdp',pr)} onAdd={()=>{onAddToCart(pr);onNav('cart');}}/>)}
+          {PRODUCTS.filter(pr=>pr.id!==p.id).slice(0,4).map(pr=><PCard key={pr.id} {...pr} onClick={()=>onNav('pdp',pr)} onAdd={()=>onAddToCart(pr)} onBuyNow={()=>{onAddToCart(pr);onNav('checkout');}}/>)}
         </div>
       </div>
     </div>
@@ -972,7 +987,7 @@ const RESULTS={
   2:{profile:'Kapha Dominant',color:'#2B6CB0',desc:'Your constitution shows Kapha tendencies — steady but sometimes sluggish. Stimulating herbs and detox protocols will rebalance you.',prods:[5,1]},
 };
 
-function HealthTestPage({onNav}) {
+function HealthTestPage({onNav,onAddToCart}) {
   const [phase,setPhase]=React.useState('intro');
   const [cur,setCur]=React.useState(0);
   const [answers,setAnswers]=React.useState([]);
@@ -1055,7 +1070,7 @@ function HealthTestPage({onNav}) {
         <div>
           <h3 style={{marginBottom:18}}>Personalised Recommendations</h3>
           <div className="rg-split-sm" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-            {res.prods.map(idx=>{const p=PRODUCTS[idx];return <PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>onNav('cart')}/>;}) }
+            {res.prods.map(idx=>{const p=PRODUCTS[idx];return <PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>onAddToCart(p)} onBuyNow={()=>{onAddToCart(p);onNav('checkout');}}/>;}) }
           </div>
         </div>
         <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
@@ -1247,7 +1262,7 @@ const MOCK_ORDERS=[
 ];
 const STATUS_TONE={Delivered:'green',Shipped:'purple',Processing:'blue',Pending:'amber',Cancelled:'danger'};
 
-function AccountPage({user,onNav,onLogout}) {
+function AccountPage({user,onNav,onLogout,onAddToCart}) {
   const [tab,setTab]=React.useState('orders');
   const u=user||{name:'Priya Sharma',email:'priya@email.com',phone:'+91 98765 43210',points:1240};
   const TABS=[['orders','My Orders'],['wishlist','Wishlist'],['rewards','Rewards'],['addresses','Addresses'],['profile','Health Profile'],['settings','Settings']];
@@ -1298,7 +1313,7 @@ function AccountPage({user,onNav,onLogout}) {
     ),
     wishlist:(
       <div className="rg-3" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14}}>
-        {PRODUCTS.slice(0,3).map(p=><PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>onNav('cart')}/>)}
+        {PRODUCTS.slice(0,3).map(p=><PCard key={p.id} {...p} onClick={()=>onNav('pdp',p)} onAdd={()=>onAddToCart(p)} onBuyNow={()=>{onAddToCart(p);onNav('checkout');}}/>)}
       </div>
     ),
     addresses:(
@@ -1564,7 +1579,7 @@ function App() {
 
   const screen=()=>{
     switch(page){
-      case 'home':         return <HomePage onNav={nav}/>;
+      case 'home':         return <HomePage onNav={nav} onAddToCart={addToCart}/>;
       case 'listing':      return <ListingPage onNav={nav} onAddToCart={addToCart}/>;
       case 'new-launches': return <NewLaunchesPage onNav={nav} onAddToCart={addToCart}/>;
       case 'pdp':          return <PDPPage product={sub} onNav={nav} onAddToCart={addToCart}/>;
@@ -1573,12 +1588,12 @@ function App() {
       case 'order-confirm':return <OrderConfirmPage onNav={nav}/>;
       case 'blog':         return <BlogListingPage onNav={nav}/>;
       case 'blog-article': return <BlogArticlePage post={sub} onNav={nav}/>;
-      case 'health-test':  return <HealthTestPage onNav={nav}/>;
+      case 'health-test':  return <HealthTestPage onNav={nav} onAddToCart={addToCart}/>;
       case 'doctor-chat':  return <DoctorChatPage onNav={nav}/>;
       case 'login':        return <LoginPage onNav={nav} onLogin={(u)=>setUser(u)}/>;
-      case 'account':      return <AccountPage user={user} onNav={nav} onLogout={()=>{setUser(null);nav('home');}}/>;
+      case 'account':      return <AccountPage user={user} onNav={nav} onLogout={()=>{setUser(null);nav('home');}} onAddToCart={addToCart}/>;
       case 'track-order':  return <OrderTrackingPage onNav={nav}/>;
-      default:             return <HomePage onNav={nav}/>;
+      default:             return <HomePage onNav={nav} onAddToCart={addToCart}/>;
     }
   };
 
